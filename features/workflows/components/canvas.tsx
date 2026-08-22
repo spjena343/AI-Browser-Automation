@@ -1,58 +1,78 @@
 "use client"
 
-import "reactflow/dist/style.css"
 import {
   addEdge,
   applyEdgeChanges,
   applyNodeChanges,
   Background,
   Controls,
-  MiniMap,
   ReactFlow,
+  ConnectionLineType,
   ReactFlowProvider,
+  type ColorMode,
   type Connection,
   type Edge,
   type EdgeChange,
   type Node,
   type NodeChange,
-} from "reactflow"
-import { useCallback, useState } from "react"
+} from "@xyflow/react"
+import { useCallback, useEffect, useState } from "react"
+import { Cursors, useLiveblocksFlow } from "@liveblocks/react-flow"
+import { useTheme } from "next-themes"
+import { StepNode } from "./step-node"
+import { StepNodeType } from "../nodes/node-registry"
 
-const initialNodes: Node[] = [
+const initialNodes: StepNodeType[] = [
   {
     id: "trigger",
+    type: "step",
     position: { x: 0, y: 0 },
-    data: { label: "Trigger" },
+    data: {
+      type: "start",
+      kind: "trigger",
+      title: "Start",
+      values: {},
+    },
   },
   {
-    id: "action",
-    position: { x: 260, y: 120 },
-    data: { label: "Run browser action" },
-  },
+    id: "open-url-1",
+    type: "step",
+    position: { x: 0, y: 150 },
+    data: {
+      type: "open-url",
+      kind: "action",
+      title: "Open URL",
+      values: {
+        url: "https://example.com"
+      },
+    },
+  }
 ]
 
 const initialEdges: Edge[] = [
-  {
-    id: "trigger-action",
-    source: "trigger",
-    target: "action",
-  },
 ]
+const nodeTypes = {
+  step: StepNode,
+}
 
 export function Canvas() {
-  const [nodes, setNodes] = useState<Node[]>(initialNodes)
-  const [edges, setEdges] = useState<Edge[]>(initialEdges)
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
 
-  const onNodesChange = useCallback((changes: NodeChange[]) => {
-    setNodes((nodesSnapshot) => applyNodeChanges(changes, nodesSnapshot))
-  }, [])
+  const {
+    nodes,
+    edges,
+    onNodesChange,
+    onEdgesChange,
+    onConnect,
+  } = useLiveblocksFlow({
+    nodes: { initial: initialNodes as Node[] },
+    edges: { initial: initialEdges },
+    suspense: true,
+  });
 
-  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
-    setEdges((edgesSnapshot) => applyEdgeChanges(changes, edgesSnapshot))
-  }, [])
-
-  const onConnect = useCallback((connection: Connection) => {
-    setEdges((edgesSnapshot) => addEdge(connection, edgesSnapshot))
+  useEffect(() => {
+    setMounted(true)
   }, [])
 
   return (
@@ -61,14 +81,27 @@ export function Canvas() {
         <ReactFlow
           nodes={nodes}
           edges={edges}
+          nodeTypes={nodeTypes}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
+          colorMode={mounted ? (resolvedTheme as ColorMode) : "dark"}
           fitView
+          connectionLineType={ConnectionLineType.SmoothStep}
+          connectionLineStyle={{ stroke: "var(--border)" }}
+          defaultEdgeOptions={{
+            type: "smoothstep",
+            style: { stroke: "var(--border)" },
+          }}
+          style={{
+            "--xy-background-color": "var(--background)",
+            "--xy-edge-stroke-width": "2px",
+            "--xy-connectionline-stroke-width": "2px",
+          } as React.CSSProperties}
         >
           <Background />
-          <MiniMap />
           <Controls />
+          <Cursors style={{ zIndex: 10000 }} />
         </ReactFlow>
       </ReactFlowProvider>
     </div>

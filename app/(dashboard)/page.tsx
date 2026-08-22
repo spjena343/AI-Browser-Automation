@@ -35,8 +35,11 @@ export default function Page() {
             <Plus className="size-6 stroke-[2.4]" />
             New workflow
           </Button>
-        </EmptyContent>
+          -
+
+          -  </EmptyContent>
       </Empty>
     </section>
   )
 }
+10.3
